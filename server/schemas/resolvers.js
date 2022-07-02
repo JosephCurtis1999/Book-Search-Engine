@@ -1,15 +1,12 @@
 const { AuthenticationError } = require("apollo-server-errors");
-const { User } = require("../models");
+const { User, Book } = require("../models");
 const { signToken } = require("../utils/auth");
 
 const resolvers = {
   Query: {
     me: async (parent, args, context) => {
       if (context.user) {
-        const userData = await User.findOne({ _id: context.user._id }).select(
-          "-__v -password"
-        );
-        return userData;
+        return User.findOne({ _id: context.user._id }).select('-_v -password').populate('savedBooks');
       }
       throw new AuthenticationError("Not logged in");
     },
@@ -38,16 +35,16 @@ const resolvers = {
     },
     saveBook: async (parent, { input }, context) => {
         if (context.user) {
-          const updatedUser = await User.findOneAndUpdate(
-            { _id: context.user._id },
-            { $addToSet: { savedBooks: input } },
-            { new: true, runValidators: true }
+          const updatedUser = await User.findByIdAndUpdate(
+            {_id: context.user._id},
+                {$addToSet: {savedBooks: input}},
+            { new: true }
           );
           return updatedUser;
         }
         throw new AuthenticationError("You need to be logged in!");
       },
-      removeBook: async (parent, { bookId }, {user}) => {
+      removeBook: async (parent, { bookId }, context) => {
         if (context.user) {
           const updatedUser = await User.findOneAndUpdate(
             { _id: context.user._id },
