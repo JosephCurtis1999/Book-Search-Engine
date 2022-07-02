@@ -32,9 +32,11 @@ const SearchBooks = () => {
     }
 
     try {
-      await saveBook({
-        variables: {input: {...bookToSave}}
-      });
+      const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${searchInput}`);
+
+      if (!response.ok) {
+        throw new Error('something went wrong!');
+      }
 
       const { items } = await response.json();
 
